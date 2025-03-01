@@ -2,29 +2,43 @@
 
 import axios from 'axios';
 
-// Hugging Face Inference API için yapılandırma
-const huggingFaceApiUrl = 'https://api-inference.huggingface.co/models';
-const defaultModel = 'mistralai/Mistral-7B-Instruct-v0.2'; // Daha güncel ve güçlü bir model
-const HF_API_KEY = process.env.NEXT_PUBLIC_HF_API_KEY || process.env.HF_API_KEY || '';
+// DeepSeek API için yapılandırma
+const deepSeekApiUrl = 'https://api.deepseek.com/v1';
+const DEEPSEEK_API_KEY = process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || '';
 
-// Hugging Face API'dan cevap almak için
-async function getAIResponse(question: string, model: string = defaultModel): Promise<string> {
+// DeepSeek API'dan cevap almak için
+async function getAIResponse(question: string): Promise<string> {
   try {
-    console.log('HF API anahtarı var mı?', !!HF_API_KEY);
+    console.log('DeepSeek API anahtarı var mı?', !!DEEPSEEK_API_KEY);
     
-    // Dini sorgu için prompt formatı
-    const prompt = `<s>[INST] Sen İslami konularda bilgi veren yardımcı bir asistansın. 
-Aşağıdaki dini soruyu dikkatlice yanıtla. Eğer emin değilsen veya bilmiyorsan, bilmediğini açıkça belirt.
-
-Soru: ${question} [/INST]</s>`;
+    // Dini sorgu için prompt formatı (Türkçe)
+    const systemPrompt = `Sen dini konularda bilgi veren, Türkçe konuşan düşünceli bir asistansın. 
+İslami sorulara mantıklı, tutarlı ve saygılı cevaplar vermelisin. 
+Cevaplarını Türkçe dilbilgisi kurallarına uygun, akıcı ve anlaşılır bir şekilde formatla.
+Eğer bir sorunun cevabını bilmiyorsan veya emin değilsen, dürüstçe bilmediğini söyle.
+Cevaplarında derin düşünce ve mantık çerçevesinde açıklamalar yap.`;
 
     const response = await axios.post(
-      `${huggingFaceApiUrl}/${encodeURIComponent(model)}`,
-      { inputs: prompt },
+      `${deepSeekApiUrl}/chat/completions`,
+      {
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: question
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${HF_API_KEY}`
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
         }
       }
     );
@@ -32,22 +46,13 @@ Soru: ${question} [/INST]</s>`;
     console.log('API yanıtı:', response.data);
 
     // API'den dönen cevabı işle
-    if (response.data && response.data.generated_text) {
-      let answer = response.data.generated_text.trim();
+    if (response.data && 
+        response.data.choices && 
+        response.data.choices.length > 0 && 
+        response.data.choices[0].message &&
+        response.data.choices[0].message.content) {
       
-      // Eğer yanıt, soruyu içeriyorsa (soru kısmını kaldır)
-      if (answer.includes('[/INST]')) {
-        answer = answer.split('[/INST]').pop() || answer;
-      }
-      
-      // Başlangıç ve bitiş etiketlerini temizle
-      answer = answer.replace(/<\/?s>/g, '').trim();
-      
-      return answer;
-    } else if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-      return response.data[0].generated_text || 'Üzgünüm, bu soruya cevap veremiyorum.';
-    } else if (typeof response.data === 'string') {
-      return response.data;
+      return response.data.choices[0].message.content.trim();
     }
 
     return 'Üzgünüm, bu soruya cevap veremiyorum.';
@@ -58,9 +63,9 @@ Soru: ${question} [/INST]</s>`;
       // API'nin döndüğü hata mesajını kontrol et
       console.error('API hata detayı:', error.response.data);
       
-      // Model yüklenme durumu kontrolü (Hugging Face API'ye özgü)
-      if (error.response.status === 503 && error.response.data.error?.includes('Loading')) {
-        return 'Model şu anda yükleniyor. Lütfen birkaç saniye sonra tekrar deneyin.';
+      // Rate limit veya diğer API hataları
+      if (error.response.status === 429) {
+        return 'Şu anda çok fazla istek var. Lütfen birkaç saniye sonra tekrar deneyin.';
       }
     }
     
@@ -68,15 +73,55 @@ Soru: ${question} [/INST]</s>`;
   }
 }
 
-// OpenAssistant modeli ile alternatif
-async function getOpenAssistantResponse(question: string): Promise<string> {
-  return getAIResponse(question, 'OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5');
+// Alternatif model seçeneği eklenebilir
+async function getAlternativeResponse(question: string): Promise<string> {
+  try {
+    // Alternatif bir model kullanılabilir
+    const response = await axios.post(
+      `${deepSeekApiUrl}/chat/completions`,
+      {
+        model: "deepseek-chat",  // Farklı bir model kullanılabilir
+        messages: [
+          {
+            role: "system",
+            content: "Sen İslami sorulara mantıklı ve düşünceli Türkçe cevaplar veren bir uzman asistansın."
+          },
+          {
+            role: "user",
+            content: question
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 1024
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+        }
+      }
+    );
+
+    if (response.data && 
+        response.data.choices && 
+        response.data.choices.length > 0 && 
+        response.data.choices[0].message &&
+        response.data.choices[0].message.content) {
+      
+      return response.data.choices[0].message.content.trim();
+    }
+
+    return 'Üzgünüm, bu soruya şu anda cevap veremiyorum.';
+  } catch (error) {
+    console.error('Alternatif AI API hatası:', error);
+    throw error;
+  }
 }
 
 // Farklı modellere göre cevap seçenekleri
 const aiModels = {
   DEFAULT: getAIResponse,
-  OPEN_ASSISTANT: getOpenAssistantResponse,
+  ALTERNATIVE: getAlternativeResponse,
 };
 
 export default aiModels;
