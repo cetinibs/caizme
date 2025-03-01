@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Arka plan daire -->
+  <circle cx="200" cy="150" r="120" fill="#005e30"/>
+  
+  <!-- İç daire -->
+  <circle cx="200" cy="150" r="100" fill="#f7e396" stroke="#005e30" stroke-width="2"/>
+  
+  <!-- Hilal şekli -->
+  <path d="M200 60 A90 90 0 0 1 290 150 A90 90 0 0 1 200 240 A60 60 0 0 0 260 150 A60 60 0 0 0 200 60Z" fill="#005e30"/>
+  
+  <!-- Logo text -->
+  <text x="200" y="158" font-family="Arial, sans-serif" font-size="38" font-weight="bold" text-anchor="middle" fill="#005e30">CAİZ Mİ?</text>
+  
+  <!-- Arapça süs motifi (stilize) -->
+  <path d="M150 190 C160 200, 180 200, 190 190 C200 180, 210 180, 220 190 C230 200, 250 200, 260 190" stroke="#005e30" stroke-width="3" fill="none"/>
+  
+  <!-- Altıgen yıldız süsleme (hafif) -->
+  <g transform="translate(200 100) scale(0.2)">
+    <path d="M0,-100 L58,-50 L58,50 L0,100 L-58,50 L-58,-50 Z" fill="#005e30" opacity="0.3"/>
+  </g>
+</svg>

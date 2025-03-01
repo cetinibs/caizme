@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Arka plan daire -->
+  <circle cx="32" cy="32" r="30" fill="#005e30"/>
+  
+  <!-- İç daire -->
+  <circle cx="32" cy="32" r="24" fill="#f7e396" stroke="#005e30" stroke-width="1"/>
+  
+  <!-- 'C' harfi stilize edilmiş -->
+  <path d="M24 22 C18 26, 18 38, 24 42 C28 45, 32 43, 35 41" stroke="#005e30" stroke-width="5" stroke-linecap="round" fill="none"/>
+  
+  <!-- Nokta - ? işaretini temsil eden -->
+  <circle cx="41" cy="41" r="4" fill="#005e30"/>
+  
+  <!-- Hilal şekli (daha basit hali) -->
+  <path d="M32 14 A18 18 0 0 1 50 32 A18 18 0 0 1 32 50 A12 12 0 0 0 44 32 A12 12 0 0 0 32 14Z" fill="#005e30" opacity="0.3"/>
+</svg>
