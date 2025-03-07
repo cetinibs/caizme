@@ -1,6 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
+import { likeQuestion } from '@/services/supabase';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AnswerDisplayProps {
   question: string;
@@ -9,9 +13,31 @@ interface AnswerDisplayProps {
 }
 
 const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
+  const [liked, setLiked] = useState(false);
+  const [questionId, setQuestionId] = useState<string>('');
+  const { user } = useAuth();
+
   if (!question && !answer && !isLoading) {
     return null;
   }
+
+  const handleLike = async () => {
+    if (liked) return; // Zaten beğenilmiş
+    
+    try {
+      // Normalde backend'den gelen soru ID'si kullanılır
+      // Burada örnek olarak rastgele bir ID oluşturuyoruz
+      const tempId = questionId || crypto.randomUUID();
+      setQuestionId(tempId);
+      
+      await likeQuestion(tempId);
+      setLiked(true);
+      toast.success('Cevap beğenildi, teşekkürler!');
+    } catch (error) {
+      console.error('Beğeni işlemi sırasında hata:', error);
+      toast.error('Beğeni işlemi sırasında bir hata oluştu.');
+    }
+  };
 
   return (
     <div className="mt-6 bg-white rounded-lg shadow-md p-6">
@@ -38,13 +64,36 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
             </div>
           </div>
         ) : (
-          <div className="mt-1 prose prose-emerald prose-a:text-emerald-600 max-w-none">
-            {answer.split('\n').map((paragraph, index) => (
-              <p key={index} className="text-gray-700 text-lg mb-3 leading-relaxed">
-                {paragraph}
-              </p>
-            ))}
-          </div>
+          <>
+            <div className="mt-1 prose prose-emerald prose-a:text-emerald-600 max-w-none">
+              {answer.split('\n').map((paragraph, index) => (
+                <p key={index} className="text-gray-700 text-lg mb-3 leading-relaxed">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+            
+            {answer && (
+              <div className="mt-6 flex justify-end items-center">
+                <button 
+                  onClick={handleLike}
+                  disabled={liked}
+                  className={`flex items-center space-x-1 px-4 py-2 rounded-full transition-colors ${
+                    liked 
+                      ? 'bg-red-100 text-red-600' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500'
+                  }`}
+                >
+                  {liked ? (
+                    <FaHeart className="text-red-500" />
+                  ) : (
+                    <FaRegHeart />
+                  )}
+                  <span>{liked ? 'Beğenildi' : 'Beğen'}</span>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

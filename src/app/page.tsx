@@ -3,6 +3,7 @@
 import { useState } from "react";
 import QuestionForm from "@/components/molecules/QuestionForm";
 import AnswerDisplay from "@/components/molecules/AnswerDisplay";
+import StatisticsBar from "@/components/molecules/StatisticsBar";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { askQuestion } from "@/services/api";
 import { toast } from "react-hot-toast";
@@ -67,6 +68,9 @@ export default function Home() {
           anında cevap alın.
         </p>
       </section>
+
+      {/* İstatistik çubuğu */}
+      <StatisticsBar />
 
       <section className="bg-white rounded-lg shadow-lg p-6 mb-10">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">Sorunuzu Sorun</h2>
