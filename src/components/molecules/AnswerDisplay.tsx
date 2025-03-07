@@ -5,6 +5,7 @@ import { FaHeart, FaRegHeart, FaQuoteLeft, FaQuoteRight, FaCopy, FaCheck } from 
 import { likeQuestion } from '@/services/supabase';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AnswerDisplayProps {
   question: string;
@@ -17,6 +18,7 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
   const [questionId, setQuestionId] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   if (!question && !answer && !isLoading) {
     return null;
@@ -31,19 +33,50 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
       const tempId = questionId || crypto.randomUUID();
       setQuestionId(tempId);
       
-      await likeQuestion(tempId);
-      setLiked(true);
-      toast.success('Cevap beğenildi, teşekkürler!');
+      const success = await likeQuestion(tempId);
+      
+      if (success) {
+        setLiked(true);
+        // İstatistikleri yeniden yükle
+        queryClient.invalidateQueries({ queryKey: ['statistics'] });
+        toast.success('Cevap beğenildi, teşekkürler!');
+      } else {
+        toast.error('Beğeni işlemi başarısız oldu. Lütfen tekrar deneyin.');
+      }
     } catch (error) {
       console.error('Beğeni işlemi sırasında hata:', error);
-      toast.error('Beğeni işlemi sırasında bir hata oluştu.');
+      toast.error('Beğeni işlemi sırasında bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
     }
   };
 
   const copyToClipboard = async () => {
     try {
       const textToCopy = `Soru: ${question}\n\nCevap: ${answer}`;
-      await navigator.clipboard.writeText(textToCopy);
+      
+      // Alternatif kopyalama yöntemi
+      if (navigator.clipboard && window.isSecureContext) {
+        // Güvenli bağlamda navigator.clipboard kullan
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        // Alternatif yöntem: textarea oluştur ve kopyala
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        
+        // Görünmez yap
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        
+        // Metni seç ve kopyala
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        
+        // Temizle
+        document.body.removeChild(textArea);
+      }
+      
       setCopied(true);
       toast.success('Cevap panoya kopyalandı!');
       
@@ -52,6 +85,7 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
         setCopied(false);
       }, 2000);
     } catch (error) {
+      console.error('Kopyalama hatası:', error);
       toast.error('Kopyalama işlemi başarısız oldu.');
     }
   };

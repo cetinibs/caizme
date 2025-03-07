@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QuestionForm from "@/components/molecules/QuestionForm";
 import AnswerDisplay from "@/components/molecules/AnswerDisplay";
 import StatisticsBar from "@/components/molecules/StatisticsBar";
@@ -8,7 +8,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { askQuestion } from "@/services/api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { saveQuestion } from "@/services/supabase";
+import { saveQuestion, incrementVisitorCount } from "@/services/supabase";
 import { FiHelpCircle, FiMessageSquare } from "react-icons/fi";
 
 export default function Home() {
@@ -17,6 +17,27 @@ export default function Home() {
   const [currentAnswer, setCurrentAnswer] = useState("");
   const { user } = useAuth();
   const [recentQuestions, setRecentQuestions] = useLocalStorage<string[]>("recentQuestions", []);
+  const [visitorCounted, setVisitorCounted] = useLocalStorage<boolean>("visitorCounted", false);
+
+  // Sayfa yüklendiğinde ziyaretçi sayısını artır
+  useEffect(() => {
+    const incrementVisitor = async () => {
+      // Kullanıcı daha önce sayılmışsa tekrar sayma
+      if (visitorCounted) return;
+      
+      try {
+        await incrementVisitorCount();
+        // Başarılı olursa, kullanıcıyı sayılmış olarak işaretle
+        setVisitorCounted(true);
+      } catch (error) {
+        console.error("Ziyaretçi sayısı artırılırken hata oluştu:", error);
+        // Hata durumunda 1 saat sonra tekrar deneyebilmek için
+        setTimeout(() => setVisitorCounted(false), 3600000);
+      }
+    };
+
+    incrementVisitor();
+  }, [visitorCounted, setVisitorCounted]);
 
   const handleSubmitQuestion = async (question: string) => {
     try {
@@ -25,12 +46,20 @@ export default function Home() {
       setCurrentAnswer("");
 
       // Soruyu API'ye gönder
-      const answer = await askQuestion(question);
+      const response = await askQuestion(question);
+      
+      if (response.error) {
+        toast.error(response.error);
+        setIsLoading(false);
+        return;
+      }
+      
+      const answer = response.data || "";
       setCurrentAnswer(answer);
 
       // Soruyu kaydet (üye ise Supabase'e, değilse localStorage'a)
       if (user) {
-        await saveQuestion(question, answer);
+        await saveQuestion(user.id, question, answer);
       } else {
         // Son 5 soruyu localStorage'da sakla
         const updatedQuestions = [question, ...recentQuestions.slice(0, 4)];

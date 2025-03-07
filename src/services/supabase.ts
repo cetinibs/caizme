@@ -106,39 +106,63 @@ export const getStatistics = async (): Promise<{
 };
 
 // Ziyaretçi sayısını artır
-export async function incrementVisitorCount() {
+export async function incrementVisitorCount(): Promise<boolean> {
   try {
     // Önce ziyaretçi tablosunda kayıt var mı kontrol et
-    const { data: existingVisitors } = await supabase
+    const { data: existingVisitors, error: selectError } = await supabase
       .from('visitors')
       .select('*')
       .limit(1);
     
+    if (selectError) {
+      console.error('Ziyaretçi verisi alınırken hata oluştu:', selectError);
+      throw new Error(selectError.message);
+    }
+    
     // Eğer kayıt yoksa, ilk kaydı oluştur
     if (!existingVisitors || existingVisitors.length === 0) {
-      await supabase
+      const { error: insertError } = await supabase
         .from('visitors')
         .insert([{ count: 1 }]);
+        
+      if (insertError) {
+        console.error('Ziyaretçi kaydı oluşturulurken hata oluştu:', insertError);
+        throw new Error(insertError.message);
+      }
     } else {
       // Kayıt varsa, mevcut kaydı güncelle
-      await supabase
+      const { error: updateError } = await supabase
         .rpc('increment_visitor_count');
+        
+      if (updateError) {
+        console.error('Ziyaretçi sayısı artırılırken hata oluştu:', updateError);
+        throw new Error(updateError.message);
+      }
     }
     
     return true;
   } catch (error) {
     console.error('Ziyaretçi sayısı artırılırken hata oluştu:', error);
-    return false;
+    throw error; // Hatayı yukarıya ilet
   }
 }
 
 // Soruyu beğen
-export const likeQuestion = async (questionId: string): Promise<void> => {
+export const likeQuestion = async (questionId: string): Promise<boolean> => {
   try {
-    await supabase
+    const { data, error } = await supabase
       .from('likes')
       .insert({ question_id: questionId });
+    
+    if (error) {
+      console.error('Beğeni eklenirken hata oluştu:', error);
+      throw new Error(error.message);
+    }
+    
+    // Başarılı ekleme
+    return true;
   } catch (error) {
     console.error('Soru beğenilirken hata oluştu:', error);
+    throw error; // Hatayı yukarıya ilet
   }
 };

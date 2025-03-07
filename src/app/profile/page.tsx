@@ -103,7 +103,8 @@ export default function ProfilePage() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                leftIcon={<FiTrash2 />}
+                icon={<FiTrash2 />}
+                iconPosition="left"
                 onClick={handleDeleteAllQuestions}
                 isLoading={isDeletingAll}
                 disabled={isDeletingAll}

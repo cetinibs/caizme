@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { getStatistics, incrementVisitorCount } from '@/services/supabase';
 import { FiUsers, FiHelpCircle, FiThumbsUp } from 'react-icons/fi';
 import CountUp from 'react-countup';
+import { useQuery } from '@tanstack/react-query';
 
 interface Statistics {
   totalQuestions: number;
@@ -12,49 +13,51 @@ interface Statistics {
 }
 
 const StatisticsBar = () => {
-  const [stats, setStats] = useState<Statistics>({
-    totalQuestions: 0,
-    totalVisitors: 0,
-    totalLikes: 0
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['statistics'],
+    queryFn: async () => {
+      const statistics = await getStatistics();
+      return statistics;
+    },
+    initialData: {
+      totalQuestions: 0,
+      totalVisitors: 0,
+      totalLikes: 0
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 60000, // 1 dakika
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStatistics = async () => {
+    // Sayfa yüklendiğinde ziyaretçi sayısını artır
+    const updateVisitorCount = async () => {
       try {
-        setLoading(true);
-        const statistics = await getStatistics();
-        setStats(statistics);
-        
-        // Ziyaretçi sayısını artır
         await incrementVisitorCount();
       } catch (error) {
-        console.error('İstatistikler alınırken hata oluştu:', error);
-      } finally {
-        setLoading(false);
+        console.error('Ziyaretçi sayısı artırılırken hata oluştu:', error);
       }
     };
 
-    fetchStatistics();
+    updateVisitorCount();
   }, []);
 
   const statItems = [
     {
       icon: <FiUsers className="h-6 w-6 text-blue-500 dark:text-blue-400" />,
       label: 'Ziyaretçi',
-      value: stats.totalVisitors,
+      value: stats?.totalVisitors || 0,
       bgColor: 'bg-blue-100 dark:bg-blue-900/30',
     },
     {
       icon: <FiHelpCircle className="h-6 w-6 text-purple-500 dark:text-purple-400" />,
       label: 'Soru',
-      value: stats.totalQuestions,
+      value: stats?.totalQuestions || 0,
       bgColor: 'bg-purple-100 dark:bg-purple-900/30',
     },
     {
       icon: <FiThumbsUp className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />,
       label: 'Beğeni',
-      value: stats.totalLikes,
+      value: stats?.totalLikes || 0,
       bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
     },
   ];
@@ -72,7 +75,7 @@ const StatisticsBar = () => {
             </div>
             <div>
               <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                {loading ? (
+                {isLoading ? (
                   <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                 ) : (
                   <CountUp end={item.value} duration={2} separator="," />

@@ -12,9 +12,13 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
 
+  // Sadece istemci tarafında çalıştığından emin ol
   useEffect(() => {
+    setMounted(true);
+    
     // localStorage'dan tema tercihini al
     const storedTheme = localStorage.getItem("theme") as Theme | null;
     
@@ -29,6 +33,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Component mount edilmeden önce tema değişikliği yapma
+    if (!mounted) return;
+    
     // Tema değiştiğinde HTML'e dark class'ını ekle veya kaldır
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
@@ -38,11 +45,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     // Tema tercihini localStorage'a kaydet
     localStorage.setItem("theme", theme);
-  }, [theme]);
+  }, [theme, mounted]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === "light" ? "dark" : "light");
   };
+
+  // Hidrasyon uyumsuzluğunu önlemek için
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
