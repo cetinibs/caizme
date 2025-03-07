@@ -110,11 +110,9 @@ export const getStatistics = async () => {
     }
     
     // Toplam ziyaretçi sayısı
-    const { data: visitors, error: visitorsError } = await supabase
+    const { count: totalVisitors, error: visitorsError } = await supabase
       .from('visitors')
-      .select('count')
-      .order('id', { ascending: false })
-      .limit(1);
+      .select('*', { count: 'exact', head: true });
     
     if (visitorsError) {
       console.error('Ziyaretçi sayısı alınırken hata:', visitorsError);
@@ -131,7 +129,7 @@ export const getStatistics = async () => {
     
     const statistics = {
       totalQuestions: totalQuestions || 0,
-      totalVisitors: visitors && visitors.length > 0 ? visitors[0].count : 0,
+      totalVisitors: totalVisitors || 0,
       totalLikes: totalLikes || 0
     };
     
@@ -169,58 +167,43 @@ export const incrementVisitorCount = async () => {
       }
     }
     
-    // Mevcut ziyaretçi sayısını kontrol et
-    const { data: existingVisitors, error: selectError } = await supabase
+    // Basitleştirilmiş yaklaşım: Sadece bir ziyaretçi kaydı ekle
+    // Toplam sayıyı almak için COUNT(*) kullanılabilir
+    const { error } = await supabase
       .from('visitors')
-      .select('*')
-      .limit(1);
+      .insert([{ 
+        visited_at: new Date().toISOString() 
+      }]);
     
-    if (selectError) {
-      console.error('Ziyaretçi verisi kontrol edilirken hata:', selectError);
+    if (error) {
+      console.error('Ziyaretçi kaydı eklenirken hata:', error);
       
-      // Hata durumunda bile kullanıcıyı sayılmış olarak işaretle
+      // Hata olsa bile kullanıcıyı sayılmış olarak işaretle
+      // Bu, aynı kullanıcının sürekli deneme yapmasını önler
       localStorage.setItem('visitorCounted', 'true');
       localStorage.setItem('lastCountTime', Date.now().toString());
       
-      // Supabase erişilemese bile başarılı kabul et
+      // Hata durumunda bile başarılı kabul et (kullanıcı deneyimini bozmamak için)
       return true;
     }
     
-    let success = false;
+    // Başarılı kayıt sonrası kullanıcıyı sayılmış olarak işaretle
+    localStorage.setItem('visitorCounted', 'true');
+    localStorage.setItem('lastCountTime', Date.now().toString());
     
-    if (existingVisitors && existingVisitors.length > 0) {
-      // Ziyaretçi kaydı varsa, sayacı artır
-      const { data, error: updateError } = await supabase.rpc('increment_visitor_count');
-      
-      if (updateError) {
-        console.error('Ziyaretçi sayısı artırılırken hata:', updateError);
-      } else {
-        success = true;
+    // İstatistik önbelleğini güncelle
+    try {
+      const cachedStats = localStorage.getItem('statistics');
+      if (cachedStats) {
+        const stats = JSON.parse(cachedStats);
+        stats.totalVisitors = (stats.totalVisitors || 0) + 1;
+        localStorage.setItem('statistics', JSON.stringify(stats));
       }
-    } else {
-      // Ziyaretçi kaydı yoksa, yeni kayıt oluştur
-      const { data, error: insertError } = await supabase
-        .from('visitors')
-        .insert([{ count: 1 }]);
-      
-      if (insertError) {
-        console.error('Ziyaretçi kaydı oluşturulurken hata:', insertError);
-      } else {
-        success = true;
-      }
+    } catch (e) {
+      console.error('İstatistik önbelleği güncellenirken hata:', e);
     }
     
-    // Kullanıcıyı sayılmış olarak işaretle
-    if (success) {
-      localStorage.setItem('visitorCounted', 'true');
-      localStorage.setItem('lastCountTime', Date.now().toString());
-      
-      // İstatistik önbelleğini temizle
-      localStorage.removeItem('cachedStats');
-      localStorage.removeItem('cachedStatsTime');
-    }
-    
-    return success;
+    return true;
   } catch (error) {
     console.error('Ziyaretçi sayısı artırılırken hata:', error);
     
