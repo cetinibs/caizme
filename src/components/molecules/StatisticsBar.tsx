@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from 'react';
 import { getStatistics, incrementVisitorCount } from '@/services/supabase';
-import { FaQuestion, FaUsers, FaHeart } from 'react-icons/fa';
+import { FiUsers, FiHelpCircle, FiThumbsUp } from 'react-icons/fi';
+import CountUp from 'react-countup';
 
 interface Statistics {
   totalQuestions: number;
@@ -10,72 +11,80 @@ interface Statistics {
   totalLikes: number;
 }
 
-export default function StatisticsBar() {
+const StatisticsBar = () => {
   const [stats, setStats] = useState<Statistics>({
     totalQuestions: 0,
     totalVisitors: 0,
     totalLikes: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStatistics = async () => {
       try {
-        setIsLoading(true);
+        setLoading(true);
         const statistics = await getStatistics();
         setStats(statistics);
         
         // Ziyaretçi sayısını artır
         await incrementVisitorCount();
       } catch (error) {
-        console.error('İstatistikler yüklenirken hata oluştu:', error);
+        console.error('İstatistikler alınırken hata oluştu:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchStatistics();
   }, []);
 
+  const statItems = [
+    {
+      icon: <FiUsers className="h-6 w-6 text-blue-500 dark:text-blue-400" />,
+      label: 'Ziyaretçi',
+      value: stats.totalVisitors,
+      bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+    },
+    {
+      icon: <FiHelpCircle className="h-6 w-6 text-purple-500 dark:text-purple-400" />,
+      label: 'Soru',
+      value: stats.totalQuestions,
+      bgColor: 'bg-purple-100 dark:bg-purple-900/30',
+    },
+    {
+      icon: <FiThumbsUp className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />,
+      label: 'Beğeni',
+      value: stats.totalLikes,
+      bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
+    },
+  ];
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-      <div className="flex flex-wrap justify-around items-center">
-        <div className="flex items-center space-x-2 p-2">
-          <div className="bg-blue-100 p-2 rounded-full">
-            <FaQuestion className="text-blue-600 text-xl" />
+    <div className="mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {statItems.map((item, index) => (
+          <div 
+            key={index} 
+            className="card p-6 flex items-center transition-transform hover:scale-102 duration-300"
+          >
+            <div className={`${item.bgColor} p-4 rounded-full mr-4`}>
+              {item.icon}
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                {loading ? (
+                  <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                ) : (
+                  <CountUp end={item.value} duration={2} separator="," />
+                )}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">{item.label}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Toplam Soru</p>
-            <p className="text-xl font-bold text-gray-800">
-              {isLoading ? '...' : stats.totalQuestions.toLocaleString('tr-TR')}
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2 p-2">
-          <div className="bg-green-100 p-2 rounded-full">
-            <FaUsers className="text-green-600 text-xl" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Ziyaretçi</p>
-            <p className="text-xl font-bold text-gray-800">
-              {isLoading ? '...' : stats.totalVisitors.toLocaleString('tr-TR')}
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2 p-2">
-          <div className="bg-red-100 p-2 rounded-full">
-            <FaHeart className="text-red-600 text-xl" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Beğeni</p>
-            <p className="text-xl font-bold text-gray-800">
-              {isLoading ? '...' : stats.totalLikes.toLocaleString('tr-TR')}
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
-}
+};
+
+export default StatisticsBar;

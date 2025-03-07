@@ -106,38 +106,31 @@ export const getStatistics = async (): Promise<{
 };
 
 // Ziyaretçi sayısını artır
-export const incrementVisitorCount = async (): Promise<void> => {
+export async function incrementVisitorCount() {
   try {
-    // Bugünün tarihini al
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Bugün için ziyaretçi kaydı var mı kontrol et
-    const { data, error } = await supabase
+    // Önce ziyaretçi tablosunda kayıt var mı kontrol et
+    const { data: existingVisitors } = await supabase
       .from('visitors')
       .select('*')
-      .eq('date', today)
-      .single();
+      .limit(1);
     
-    if (error && error.code !== 'PGSQL_ERROR_NO_ROWS') {
-      throw error;
-    }
-    
-    if (data) {
-      // Mevcut kaydı güncelle
+    // Eğer kayıt yoksa, ilk kaydı oluştur
+    if (!existingVisitors || existingVisitors.length === 0) {
       await supabase
         .from('visitors')
-        .update({ count: data.count + 1 })
-        .eq('id', data.id);
+        .insert([{ count: 1 }]);
     } else {
-      // Yeni kayıt oluştur
+      // Kayıt varsa, mevcut kaydı güncelle
       await supabase
-        .from('visitors')
-        .insert({ date: today, count: 1 });
+        .rpc('increment_visitor_count');
     }
+    
+    return true;
   } catch (error) {
     console.error('Ziyaretçi sayısı artırılırken hata oluştu:', error);
+    return false;
   }
-};
+}
 
 // Soruyu beğen
 export const likeQuestion = async (questionId: string): Promise<void> => {
