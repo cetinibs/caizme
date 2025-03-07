@@ -74,33 +74,11 @@ body {
 
 /* Buton stilleri */
 .btn-primary {
-  background-color: rgb(var(--primary-color));
-  color: white;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background-color: rgba(var(--primary-color), 0.9);
-  transform: translateY(-1px);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
+  @apply bg-primary text-white rounded-lg font-medium py-2 px-4 transition duration-200 hover:bg-opacity-90 hover:-translate-y-0.5 active:translate-y-0;
 }
 
 .btn-secondary {
-  background-color: transparent;
-  color: rgb(var(--text-primary));
-  border: 1px solid rgb(var(--card-border));
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary:hover {
-  background-color: rgba(var(--text-secondary), 0.1);
+  @apply bg-transparent text-text-primary border border-card-border rounded-lg font-medium py-2 px-4 transition duration-200 hover:bg-text-secondary/10;
 }
 
 /* Animasyonlar */
@@ -141,16 +119,7 @@ body {
 
 /* Form elemanları */
 input, textarea, select {
-  border-radius: 0.5rem;
-  border: 1px solid rgb(var(--card-border));
-  padding: 0.75rem;
-  transition: all 0.2s ease;
-}
-
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: rgb(var(--primary-color));
-  box-shadow: 0 0 0 2px rgba(var(--primary-color), 0.2);
+  @apply rounded-lg border border-card-border p-3 transition duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20;
 }
 
 /* Responsive düzenlemeler */
@@ -193,30 +162,5 @@ input:focus, textarea:focus, select:focus {
 }
 
 .skeleton {
-  animate: pulse 2s ease-in-out infinite;
-  background: rgba(var(--card-border), 0.5);
-  border-radius: 0.5rem;
+  @apply animate-pulse bg-card-border/50 rounded-lg;
 }
-
-/* Koyu tema */
-/* Sistem tercihine göre otomatik tema değişimi kaldırıldı
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background-start-rgb: 17, 24, 39; 
-    --background-end-rgb: 31, 41, 55; 
-    --text-primary: 243, 244, 246; 
-    --text-secondary: 156, 163, 175; 
-    --card-bg: 31, 41, 55; 
-    --card-border: 55, 65, 81; 
-  }
-  body {
-    color: rgb(var(--text-primary));
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        rgb(var(--background-end-rgb))
-      )
-      rgb(var(--background-start-rgb));
-  }
-}
-*/
