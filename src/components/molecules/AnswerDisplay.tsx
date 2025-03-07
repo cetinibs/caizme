@@ -18,7 +18,7 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
       {question && (
         <div className="mb-4">
           <h3 className="text-xl font-bold text-gray-900">Soru:</h3>
-          <p className="mt-1 text-gray-600">{question}</p>
+          <p className="mt-1 text-gray-600 text-lg">{question}</p>
         </div>
       )}
 
@@ -40,7 +40,7 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
         ) : (
           <div className="mt-1 prose prose-emerald prose-a:text-emerald-600 max-w-none">
             {answer.split('\n').map((paragraph, index) => (
-              <p key={index} className="text-gray-600 mb-2">
+              <p key={index} className="text-gray-700 text-lg mb-3 leading-relaxed">
                 {paragraph}
               </p>
             ))}

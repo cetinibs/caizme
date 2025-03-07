@@ -26,6 +26,7 @@ const QuestionForm = ({ onSubmit, isLoading }: QuestionFormProps) => {
           placeholder="Örneğin: Oruçluyken diş fırçalamak orucu bozar mı?"
           fullWidth
           rows={4}
+          className="text-lg"
           {...register('question', {
             required: 'Lütfen bir soru girin',
             minLength: {
@@ -40,6 +41,7 @@ const QuestionForm = ({ onSubmit, isLoading }: QuestionFormProps) => {
           type="submit"
           fullWidth
           isLoading={isLoading}
+          className="text-lg py-3"
         >
           Sor
         </Button>
