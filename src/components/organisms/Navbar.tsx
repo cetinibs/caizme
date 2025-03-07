@@ -54,7 +54,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-500 transition-colors">
+            <span className="text-3xl md:text-4xl font-bold text-emerald-600 dark:text-emerald-500 transition-colors">
               Caiz<span className="text-gray-800 dark:text-white">mi?</span>
             </span>
           </Link>
