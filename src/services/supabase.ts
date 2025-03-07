@@ -4,9 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 
 // Supabase bağlantı bilgileri
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lmfyeczfulmcxfyvwmxk.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtZnllY3pmdWxtY3hmeXZ3bXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODgzOTI0NzgsImV4cCI6MjAwMzk2ODQ3OH0.Xh9cCxyrJD4NF8JFrYZqXlZCLNpC4Ot_2JsO-J9Dn-A';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtZnllY3pmdWxtY3hmeXZ3bXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk5MzA0MzMsImV4cCI6MjAyNTUwNjQzM30.Nt8OYDhXRyQl9WGqXJR6cqyQqxgQNWtrfPYxiVLIbMM';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase istemcisi oluştur
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Kullanıcı profili işlemleri
 export const getUserProfile = async () => {
