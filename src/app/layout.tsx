@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import { AuthProvider } from '@/components/providers/AuthProvider';
 import VisitorCounter from '@/components/atoms/VisitorCounter';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -15,6 +16,9 @@ export const metadata: Metadata = {
   authors: [{ name: 'Caiz.me Ekibi' }],
   creator: 'Caiz.me',
   publisher: 'Caiz.me',
+  verification: {
+    google: 'wMJgbeJzlF5_t5K5s5t8RzmqGt4oRXHMjgNwXa3QX8A',
+  },
   openGraph: {
     title: 'Caiz.me - İslami Sorularınızın Cevabı',
     description: 'İslami sorularınızı sorun, hızlı ve güvenilir cevaplar alın.',
@@ -35,9 +39,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
-            <VisitorCounter />
-            {children}
-            <Toaster position="bottom-right" />
+            <AuthProvider>
+              <VisitorCounter />
+              {children}
+              <Toaster position="bottom-right" />
+            </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

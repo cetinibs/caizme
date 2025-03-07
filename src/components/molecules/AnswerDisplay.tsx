@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FiCopy, FiThumbsUp } from "react-icons/fi";
+import { FiThumbsUp } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { likeQuestion } from "@/services/supabase";
 import { motion } from "framer-motion";
 import Button from "../atoms/Button";
+import CopyButton from "../atoms/CopyButton";
 
 interface AnswerDisplayProps {
   question: string;
@@ -71,18 +72,6 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
     }
   };
 
-  const handleCopyToClipboard = () => {
-    if (!answer) return;
-    
-    try {
-      navigator.clipboard.writeText(answer);
-      toast.success("Cevap panoya kopyalandı!");
-    } catch (error) {
-      console.error("Kopyalama işlemi sırasında hata oluştu:", error);
-      toast.error("Kopyalama işlemi başarısız oldu.");
-    }
-  };
-
   if (!showAnswer) return null;
 
   return (
@@ -124,14 +113,7 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
               {liked ? "Beğenildi" : "Beğen"}
             </Button>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<FiCopy />}
-              onClick={handleCopyToClipboard}
-            >
-              Kopyala
-            </Button>
+            <CopyButton text={answer} />
           </div>
         </div>
       ) : (

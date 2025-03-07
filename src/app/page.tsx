@@ -7,7 +7,7 @@ import StatisticsBar from "@/components/molecules/StatisticsBar";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { askQuestion } from "@/services/api";
 import { toast } from "react-hot-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { saveQuestion, incrementVisitorCount } from "@/services/supabase";
 import { FiHelpCircle, FiMessageSquare } from "react-icons/fi";
 

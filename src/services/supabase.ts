@@ -35,6 +35,32 @@ export const getUserProfile = async () => {
   }
 };
 
+// Soru kaydetme işlemi
+export const saveQuestion = async (userId: string, question: string, answer: string) => {
+  try {
+    const { error } = await supabase
+      .from('questions')
+      .insert([
+        { 
+          user_id: userId,
+          question,
+          answer,
+          created_at: new Date().toISOString()
+        }
+      ]);
+    
+    if (error) {
+      console.error('Soru kaydedilirken hata:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Soru kaydedilirken hata:', error);
+    return false;
+  }
+};
+
 // Soru işlemleri
 export const submitQuestion = async (question: string, answer: string) => {
   try {

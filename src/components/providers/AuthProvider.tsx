@@ -1,14 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { supabase } from "@/services/supabase";
 import { User } from "@supabase/supabase-js";
 
-/**
- * Supabase kimlik doğrulama hook'u
- * Kullanıcı oturum durumunu yönetir ve kullanıcı bilgilerini sağlar
- */
-export const useAuth = () => {
+// Auth context tipi
+type AuthContextType = {
+  user: User | null;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<{ error: any }>;
+};
+
+// Varsayılan context değeri
+const defaultContext: AuthContextType = {
+  user: null,
+  isLoading: true,
+  signIn: async () => ({ error: new Error("AuthProvider yüklenmedi") }),
+  signInWithGoogle: async () => ({ error: new Error("AuthProvider yüklenmedi") }),
+  signUp: async () => ({ error: new Error("AuthProvider yüklenmedi") }),
+  signOut: async () => ({ error: new Error("AuthProvider yüklenmedi") }),
+};
+
+// Auth context oluşturma
+export const AuthContext = createContext<AuthContextType>(defaultContext);
+
+// Auth Provider bileşeni
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,7 +62,7 @@ export const useAuth = () => {
     };
   }, []);
 
-  return {
+  const auth = {
     user,
     isLoading,
     signIn: async (email: string, password: string) => {
@@ -96,4 +116,19 @@ export const useAuth = () => {
       }
     },
   };
+
+  return (
+    <AuthContext.Provider value={auth}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Auth hook'u
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
