@@ -59,7 +59,12 @@ export default function Home() {
 
       // Soruyu kaydet (üye ise Supabase'e, değilse localStorage'a)
       if (user) {
-        await saveQuestion(user.id, question, answer);
+        try {
+          await saveQuestion(user.id, question, answer);
+        } catch (error) {
+          console.error("Soru kaydedilirken hata oluştu:", error);
+          // Hata durumunda kullanıcıyı rahatsız etme, sessizce devam et
+        }
       } else {
         // Son 5 soruyu localStorage'da sakla
         const updatedQuestions = [question, ...recentQuestions.slice(0, 4)];
@@ -77,7 +82,7 @@ export default function Home() {
     <main className="container-custom py-12">
       <section className="mb-12 text-center">
         <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in">
-          <span className="text-emerald-600 dark:text-emerald-500">Caiz</span> mi?
+          <span className="text-emerald-600 dark:text-emerald-500">Caiz</span>.me
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: "0.1s" }}>
           Dini konulardaki sorularınızı yapay zeka destekli sistemimize sorun, 
@@ -100,49 +105,35 @@ export default function Home() {
         <QuestionForm onSubmit={handleSubmitQuestion} isLoading={isLoading} />
       </section>
 
-      {(currentQuestion || currentAnswer || isLoading) && (
-        <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
-          <AnswerDisplay 
-            question={currentQuestion} 
-            answer={currentAnswer} 
-            isLoading={isLoading} 
-          />
-        </div>
-      )}
+      {/* Cevap Gösterimi */}
+      <AnswerDisplay 
+        question={currentQuestion} 
+        answer={currentAnswer} 
+        isLoading={isLoading} 
+      />
 
-      {/* Bilgi bölümü */}
-      <section className="mt-16 grid md:grid-cols-2 gap-8 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-        <div className="card p-6">
-          <div className="flex items-center mb-4">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mr-3">
-              <FiHelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Nasıl Çalışır?</h3>
+      {/* Bilgi Kartı */}
+      <section className="card p-8 mt-10 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+        <div className="flex items-start">
+          <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full mr-4 mt-1">
+            <FiHelpCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-3">
-            Caiz mi? platformu, İslami konularda sorularınızı yanıtlamak için gelişmiş yapay zeka teknolojisini kullanır. 
-            Sorunuzu yazın ve anında cevap alın.
-          </p>
-          <p className="text-gray-600 dark:text-gray-400">
-            Cevaplar, güvenilir İslami kaynaklardan elde edilen bilgilerle oluşturulur ve farklı mezheplerin görüşlerini içerebilir.
-          </p>
-        </div>
-        
-        <div className="card p-6">
-          <div className="flex items-center mb-4">
-            <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-full mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-4">Caiz.me Hakkında</h2>
+            <div className="prose dark:prose-invert max-w-none">
+              <p>
+                Caiz.me, İslami sorularınıza hızlı ve güvenilir cevaplar sunan yapay zeka destekli bir platformdur. 
+                Namaz, oruç, zekat gibi ibadetler hakkındaki sorularınızı sorabilir, farklı mezheplerin görüşlerini öğrenebilirsiniz.
+              </p>
+              <p>
+                Sistemimiz, güvenilir İslami kaynaklardan beslenen yapay zeka modelleri kullanarak sorularınıza kapsamlı yanıtlar üretir. 
+                Cevaplar, farklı görüşleri ve delilleri içerecek şekilde yapılandırılmıştır.
+              </p>
+              <p>
+                <strong>Not:</strong> Caiz.me bir fetva makamı değildir. Önemli dini konularda mutlaka bir din aliminden görüş alınız.
+              </p>
             </div>
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Sık Sorulan Sorular</h3>
           </div>
-          <ul className="space-y-2">
-            <li className="text-gray-600 dark:text-gray-400">• Hangi mezheplerin görüşlerini içerir?</li>
-            <li className="text-gray-600 dark:text-gray-400">• Verilen cevaplar ne kadar güvenilir?</li>
-            <li className="text-gray-600 dark:text-gray-400">• Hesap oluşturmam gerekli mi?</li>
-            <li className="text-gray-600 dark:text-gray-400">• Sorularım kaydediliyor mu?</li>
-          </ul>
         </div>
       </section>
     </main>

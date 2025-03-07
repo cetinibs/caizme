@@ -1,15 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Disable ESLint during production builds
+    // Derleme sırasında ESLint kontrolünü devre dışı bırak
     ignoreDuringBuilds: true,
   },
+  
   typescript: {
-    // Tip hatalarını derleme sırasında yoksay
+    // Derleme sırasında TypeScript kontrolünü devre dışı bırak
     ignoreBuildErrors: true,
   },
-  // Vercel dağıtımı için optimizasyon
-  swcMinify: true,
-}
+  
+  images: {
+    domains: ['images.unsplash.com'],
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

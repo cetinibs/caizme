@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from 'react';
-import { getStatistics, incrementVisitorCount } from '@/services/supabase';
-import { FiUsers, FiHelpCircle, FiThumbsUp } from 'react-icons/fi';
-import CountUp from 'react-countup';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from "react";
+import { FiUsers, FiMessageSquare, FiHeart } from "react-icons/fi";
+import { getStatistics } from "@/services/supabase";
+import { motion } from "framer-motion";
 
 interface Statistics {
   totalQuestions: number;
@@ -13,79 +12,113 @@ interface Statistics {
 }
 
 const StatisticsBar = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['statistics'],
-    queryFn: async () => {
-      const statistics = await getStatistics();
-      return statistics;
-    },
-    initialData: {
-      totalQuestions: 0,
-      totalVisitors: 0,
-      totalLikes: 0
-    },
-    refetchOnWindowFocus: false,
-    staleTime: 60000, // 1 dakika
+  const [stats, setStats] = useState<Statistics>({
+    totalQuestions: 0,
+    totalVisitors: 0,
+    totalLikes: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Sayfa yüklendiğinde ziyaretçi sayısını artır
-    const updateVisitorCount = async () => {
+    const fetchStatistics = async () => {
       try {
-        await incrementVisitorCount();
+        setIsLoading(true);
+        
+        // Önce localStorage'den istatistikleri kontrol et
+        const cachedStatsStr = localStorage.getItem('cachedStats');
+        const cachedTime = localStorage.getItem('cachedStatsTime');
+        
+        // Eğer önbelleğe alınmış istatistikler varsa ve 1 saatten daha yeni ise kullan
+        if (cachedStatsStr && cachedTime) {
+          const cachedStats = JSON.parse(cachedStatsStr);
+          const cacheAge = Date.now() - parseInt(cachedTime);
+          
+          // Önbellek 1 saatten daha yeni ise kullan (3600000 ms = 1 saat)
+          if (cacheAge < 3600000) {
+            setStats(cachedStats);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // Önbellekte yoksa veya eskiyse, Supabase'den al
+        const statistics = await getStatistics();
+        setStats(statistics);
+        
+        // Yeni istatistikleri önbelleğe al
+        localStorage.setItem('cachedStats', JSON.stringify(statistics));
+        localStorage.setItem('cachedStatsTime', Date.now().toString());
       } catch (error) {
-        console.error('Ziyaretçi sayısı artırılırken hata oluştu:', error);
+        console.error("İstatistikler yüklenirken hata oluştu:", error);
+        
+        // Hata durumunda varsayılan değerleri göster
+        setStats({
+          totalQuestions: 0,
+          totalVisitors: 0,
+          totalLikes: 0,
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    updateVisitorCount();
+    fetchStatistics();
   }, []);
 
-  const statItems = [
-    {
-      icon: <FiUsers className="h-6 w-6 text-blue-500 dark:text-blue-400" />,
-      label: 'Ziyaretçi',
-      value: stats?.totalVisitors || 0,
-      bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    },
-    {
-      icon: <FiHelpCircle className="h-6 w-6 text-purple-500 dark:text-purple-400" />,
-      label: 'Soru',
-      value: stats?.totalQuestions || 0,
-      bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-    },
-    {
-      icon: <FiThumbsUp className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />,
-      label: 'Beğeni',
-      value: stats?.totalLikes || 0,
-      bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
-    },
-  ];
+  // İstatistik kartı bileşeni
+  const StatCard = ({ 
+    icon, 
+    title, 
+    value, 
+    delay 
+  }: { 
+    icon: React.ReactNode; 
+    title: string; 
+    value: number; 
+    delay: number;
+  }) => (
+    <motion.div
+      className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex items-center space-x-3"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+    >
+      <div className="p-2 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+        {icon}
+      </div>
+      <div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+          {isLoading ? (
+            <span className="inline-block w-8 h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+          ) : (
+            value.toLocaleString()
+          )}
+        </p>
+      </div>
+    </motion.div>
+  );
 
   return (
-    <div className="mb-10">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {statItems.map((item, index) => (
-          <div 
-            key={index} 
-            className="card p-6 flex items-center transition-transform hover:scale-102 duration-300"
-          >
-            <div className={`${item.bgColor} p-4 rounded-full mr-4`}>
-              {item.icon}
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                {isLoading ? (
-                  <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                ) : (
-                  <CountUp end={item.value} duration={2} separator="," />
-                )}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">{item.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <StatCard
+        icon={<FiMessageSquare className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
+        title="Toplam Soru"
+        value={stats.totalQuestions}
+        delay={0}
+      />
+      <StatCard
+        icon={<FiUsers className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
+        title="Toplam Ziyaretçi"
+        value={stats.totalVisitors}
+        delay={0.1}
+      />
+      <StatCard
+        icon={<FiHeart className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
+        title="Toplam Beğeni"
+        value={stats.totalLikes}
+        delay={0.2}
+      />
     </div>
   );
 };

@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
-import { FaHeart, FaRegHeart, FaQuoteLeft, FaQuoteRight, FaCopy, FaCheck } from 'react-icons/fa';
-import { likeQuestion } from '@/services/supabase';
-import { toast } from 'react-hot-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from "react";
+import { FiCopy, FiThumbsUp } from "react-icons/fi";
+import { toast } from "react-hot-toast";
+import { likeQuestion } from "@/services/supabase";
+import { motion } from "framer-motion";
+import Button from "../atoms/Button";
 
 interface AnswerDisplayProps {
   question: string;
@@ -15,164 +15,131 @@ interface AnswerDisplayProps {
 
 const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
   const [liked, setLiked] = useState(false);
-  const [questionId, setQuestionId] = useState<string>('');
-  const [copied, setCopied] = useState(false);
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const [isLiking, setIsLiking] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
 
-  if (!question && !answer && !isLoading) {
-    return null;
-  }
+  // Sayfa yüklendiğinde daha önce beğenilen soruları kontrol et
+  useEffect(() => {
+    if (question) {
+      try {
+        const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '[]');
+        setLiked(likedQuestions.includes(question));
+      } catch (error) {
+        console.error("Beğenilen sorular kontrol edilirken hata oluştu:", error);
+      }
+    }
+  }, [question]);
+
+  // Cevap veya yükleme durumu değiştiğinde gösterimi güncelle
+  useEffect(() => {
+    if (answer || isLoading) {
+      setShowAnswer(true);
+    }
+  }, [answer, isLoading]);
 
   const handleLike = async () => {
-    if (liked) return; // Zaten beğenilmiş
+    if (!question || liked || isLiking) return;
     
     try {
-      // Normalde backend'den gelen soru ID'si kullanılır
-      // Burada örnek olarak rastgele bir ID oluşturuyoruz
-      const tempId = questionId || crypto.randomUUID();
-      setQuestionId(tempId);
+      setIsLiking(true);
       
-      const success = await likeQuestion(tempId);
+      // Soruyu beğen
+      const success = await likeQuestion(question);
       
       if (success) {
         setLiked(true);
-        // İstatistikleri yeniden yükle
-        queryClient.invalidateQueries({ queryKey: ['statistics'] });
-        toast.success('Cevap beğenildi, teşekkürler!');
+        toast.success("Cevap beğenildi!");
+        
+        // LocalStorage'e beğeniyi kaydet
+        try {
+          const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '[]');
+          if (!likedQuestions.includes(question)) {
+            likedQuestions.push(question);
+            localStorage.setItem('likedQuestions', JSON.stringify(likedQuestions));
+          }
+        } catch (error) {
+          console.error("Beğeni localStorage'e kaydedilirken hata oluştu:", error);
+        }
       } else {
-        toast.error('Beğeni işlemi başarısız oldu. Lütfen tekrar deneyin.');
+        toast.error("Beğeni işlemi başarısız oldu.");
       }
     } catch (error) {
-      console.error('Beğeni işlemi sırasında hata:', error);
-      toast.error('Beğeni işlemi sırasında bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
+      console.error("Beğeni işlemi sırasında hata oluştu:", error);
+      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      setIsLiking(false);
     }
   };
 
-  const copyToClipboard = async () => {
+  const handleCopyToClipboard = () => {
+    if (!answer) return;
+    
     try {
-      const textToCopy = `Soru: ${question}\n\nCevap: ${answer}`;
-      
-      // Alternatif kopyalama yöntemi
-      if (navigator.clipboard && window.isSecureContext) {
-        // Güvenli bağlamda navigator.clipboard kullan
-        await navigator.clipboard.writeText(textToCopy);
-      } else {
-        // Alternatif yöntem: textarea oluştur ve kopyala
-        const textArea = document.createElement("textarea");
-        textArea.value = textToCopy;
-        
-        // Görünmez yap
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        document.body.appendChild(textArea);
-        
-        // Metni seç ve kopyala
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-        
-        // Temizle
-        document.body.removeChild(textArea);
-      }
-      
-      setCopied(true);
-      toast.success('Cevap panoya kopyalandı!');
-      
-      // 2 saniye sonra kopyalama ikonunu sıfırla
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      navigator.clipboard.writeText(answer);
+      toast.success("Cevap panoya kopyalandı!");
     } catch (error) {
-      console.error('Kopyalama hatası:', error);
-      toast.error('Kopyalama işlemi başarısız oldu.');
+      console.error("Kopyalama işlemi sırasında hata oluştu:", error);
+      toast.error("Kopyalama işlemi başarısız oldu.");
     }
   };
+
+  if (!showAnswer) return null;
 
   return (
-    <div className="card p-8 transition-all duration-300">
-      {question && (
-        <div className="mb-6">
-          <div className="flex items-start mb-3">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mr-3 mt-1">
-              <FaQuoteLeft className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Soru</h3>
-          </div>
-          <p className="text-gray-700 dark:text-gray-300 text-lg pl-10">{question}</p>
+    <motion.section 
+      className="card p-8 mt-10"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Cevap</h2>
+      
+      {isLoading ? (
+        <div className="flex flex-col items-center py-8">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cevap hazırlanıyor...</p>
         </div>
-      )}
-
-      <div>
-        <div className="flex items-start mb-3">
-          <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-full mr-3 mt-1">
-            <FaQuoteRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+      ) : answer ? (
+        <div>
+          <div className="bg-gray-100 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">Sorunuz:</h3>
+            <p className="text-gray-600 dark:text-gray-400">{question}</p>
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Cevap</h3>
-        </div>
-        
-        {isLoading ? (
-          <div className="pl-10">
-            <div className="animate-pulse space-y-4 py-1">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6"></div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-              </div>
-            </div>
+          
+          <div className="prose dark:prose-invert max-w-none">
+            {answer.split('\n').map((paragraph, index) => (
+              paragraph.trim() ? <p key={index} className="mb-4">{paragraph}</p> : <br key={index} />
+            ))}
           </div>
-        ) : (
-          <>
-            <div className="mt-1 prose prose-emerald dark:prose-invert prose-a:text-emerald-600 dark:prose-a:text-emerald-400 max-w-none pl-10">
-              {answer.split('\n').map((paragraph, index) => (
-                <p key={index} className="text-gray-700 dark:text-gray-300 text-lg mb-4 leading-relaxed">
-                  {paragraph}
-                </p>
-              ))}
-            </div>
+          
+          <div className="flex justify-end mt-6 space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<FiThumbsUp className={liked ? "text-emerald-500" : ""} />}
+              onClick={handleLike}
+              disabled={liked || isLiking}
+              isLoading={isLiking}
+            >
+              {liked ? "Beğenildi" : "Beğen"}
+            </Button>
             
-            {answer && (
-              <div className="mt-8 flex justify-end items-center space-x-4">
-                <button 
-                  onClick={copyToClipboard}
-                  className="flex items-center space-x-1 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  {copied ? (
-                    <FaCheck className="text-green-500 dark:text-green-400" />
-                  ) : (
-                    <FaCopy />
-                  )}
-                  <span>{copied ? 'Kopyalandı' : 'Kopyala'}</span>
-                </button>
-                
-                <button 
-                  onClick={handleLike}
-                  disabled={liked}
-                  className={`flex items-center space-x-1 px-4 py-2 rounded-full transition-colors ${
-                    liked 
-                      ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-300' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-300'
-                  }`}
-                >
-                  {liked ? (
-                    <FaHeart className="text-red-500 dark:text-red-300" />
-                  ) : (
-                    <FaRegHeart />
-                  )}
-                  <span>{liked ? 'Beğenildi' : 'Beğen'}</span>
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<FiCopy />}
+              onClick={handleCopyToClipboard}
+            >
+              Kopyala
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-gray-600 dark:text-gray-400 py-4">
+          Henüz bir cevap yok. Lütfen bir soru sorun.
+        </p>
+      )}
+    </motion.section>
   );
 };
 

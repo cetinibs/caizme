@@ -55,7 +55,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <span className="text-3xl md:text-4xl font-bold text-emerald-600 dark:text-emerald-500 transition-colors">
-              Caiz<span className="text-gray-800 dark:text-white">mi?</span>
+              Caiz<span className="text-gray-800 dark:text-white">.me</span>
             </span>
           </Link>
 
