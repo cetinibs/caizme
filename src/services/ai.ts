@@ -4,6 +4,7 @@ import axios from 'axios';
 
 // OpenRouter API için yapılandırma
 const openRouterApiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+// Client-side environment variables should use process.env.NEXT_PUBLIC_*
 const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '';
 const SITE_URL = 'https://caizme.com';
 const SITE_NAME = 'Caizme - İslami Sorular';
@@ -79,97 +80,37 @@ Her konuda orta yolu takip etmek ve aşırılıklardan kaçınmak İslam'ın tem
 // OpenRouter API'dan cevap almak için
 async function getAIResponse(question: string): Promise<string> {
   try {
-    console.log('OpenRouter API anahtarı var mı?', !!OPENROUTER_API_KEY);
-    console.log('API anahtarı uzunluğu:', OPENROUTER_API_KEY.length);
     console.log('Soru:', question);
-    
-    if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY.length < 10) {
-      console.error('OpenRouter API anahtarı bulunamadı veya geçersiz!');
-      return generateFallbackResponse(question);
-    }
-    
-    // Dini sorgu için geliştirilmiş prompt formatı (Türkçe)
-    const systemPrompt = `Sen dini konularda uzman, Türkçe konuşan bir İslam alimi asistansın. 
-İslami sorulara detaylı, mantıklı, tutarlı ve saygılı cevaplar vermelisin.
-
-Cevaplarını şu şekilde yapılandır:
-1. **Sorunun Özeti**: Sorunun ana konusunu belirle ve kısaca özetle
-2. **Dini Hüküm**: Konuyla ilgili temel İslami hükmü açıkla
-3. **Farklı Görüşler**: Konuyla ilgili İslami kaynaklardaki farklı mezhep ve alimlerin görüşlerini karşılaştır
-4. **Deliller**: Kur'an-ı Kerim'den ayetler, hadisler ve İslam alimlerinin görüşlerinden delilleri detaylı olarak sun
-5. **Günlük Uygulama**: Günlük hayatta nasıl uygulanacağına dair pratik bilgiler ve öneriler ver
-6. **Sonuç**: Konuyu özetleyerek sonuca bağla
-
-Her bölümü başlıklarla ayır ve koyu yazı (bold) kullan. Cevaplarını Türkçe dilbilgisi kurallarına uygun, akıcı ve anlaşılır bir şekilde formatla.
-Paragraflar halinde, düzenli ve okuması kolay bir şekilde yanıt ver.
-Cevaplarında derin düşünce ve mantık çerçevesinde açıklamalar yap.
-Eğer bir sorunun cevabını bilmiyorsan veya emin değilsen, dürüstçe bilmediğini söyle.
-
-Cevaplarında kesin ve net ifadeler kullan, belirsiz ve muğlak ifadelerden kaçın.
-Kullanıcıya saygılı bir dil kullan ve cevabını mümkün olduğunca anlaşılır kıl.`;
 
     // Kullanıcı sorusunu geliştir ve zenginleştir
     const enhancedQuestion = await enhanceUserPrompt(question);
     console.log('Geliştirilmiş soru:', enhancedQuestion);
 
-    // OpenRouter API isteği
-    const response = await axios.post(
-      openRouterApiUrl,
-      {
-        model: "deepseek/deepseek-r1:free", // OpenRouter üzerindeki DeepSeek modeli
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: enhancedQuestion
-          }
-        ],
-        temperature: 0.6,
-        max_tokens: 2500,
-        top_p: 0.9,
-        frequency_penalty: 0.2,
-        presence_penalty: 0.2
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': SITE_URL,
-          'X-Title': SITE_NAME
-        }
+    // Server-side API endpoint'i kullan
+    try {
+      const response = await axios.post('/api/openrouter', {
+        question: enhancedQuestion
+      });
+
+      // API yanıtını detaylı logla
+      console.log('API yanıtı alındı');
+
+      // API'den dönen cevabı işle
+      if (response.data && response.data.answer) {
+        // Cevabı formatla ve iyileştir
+        return formatAnswer(response.data.answer);
       }
-    );
 
-    console.log('API yanıtı:', response.data);
-
-    // API'den dönen cevabı işle
-    if (response.data && 
-        response.data.choices && 
-        response.data.choices.length > 0 && 
-        response.data.choices[0].message &&
-        response.data.choices[0].message.content) {
-      
-      // Cevabı formatla ve iyileştir
-      const rawAnswer = response.data.choices[0].message.content.trim();
-      return formatAnswer(rawAnswer);
+      console.error('API yanıtı beklenen formatta değil:', response.data);
+      return 'Üzgünüm, bu soruya cevap veremiyorum.';
+    } catch (apiError) {
+      console.error('Server API hatası:', apiError);
+      // Hata durumunda yedek cevap üret
+      return generateFallbackResponse(question);
     }
-
-    return 'Üzgünüm, bu soruya cevap veremiyorum.';
   } catch (error) {
-    console.error('AI API hatası:', error);
-    
-    if (axios.isAxiosError(error) && error.response) {
-      // API'nin döndüğü hata mesajını kontrol et
-      console.error('API hata detayı:', error.response.data);
-      
-      // Rate limit veya diğer API hataları
-      if (error.response.status === 429) {
-        return 'Şu anda çok fazla istek var. Lütfen birkaç saniye sonra tekrar deneyin.';
-      }
-    }
+    // Hata detaylarını logla
+    console.error('AI işleme hatası:', error);
     
     // Hata durumunda yedek cevap üret
     return generateFallbackResponse(question);
@@ -329,4 +270,8 @@ const aiModels = {
   ALTERNATIVE: getAlternativeResponse,
 };
 
+// Doğrudan fonksiyonları dışa aktar
+export const getResponse = getAIResponse;
+export { getAlternativeResponse };
+// Geriye dönük uyumluluk için aiModels nesnesini de dışa aktar
 export default aiModels;

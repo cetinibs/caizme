@@ -39,7 +39,7 @@ export const getUserProfile = async () => {
 // Soru kaydetme işlemi
 export const saveQuestion = async (userId: string, question: string, answer: string) => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('questions')
       .insert([
         { 
@@ -48,17 +48,19 @@ export const saveQuestion = async (userId: string, question: string, answer: str
           answer,
           created_at: new Date().toISOString()
         }
-      ]);
-    
+      ])
+      .select('id')
+      .single();
+
     if (error) {
       console.error('Soru kaydedilirken hata:', error);
-      return false;
+      return null;
     }
-    
-    return true;
+
+    return data?.id || null;
   } catch (error) {
     console.error('Soru kaydedilirken hata:', error);
-    return false;
+    return null;
   }
 };
 
@@ -170,11 +172,35 @@ export const incrementVisitorCount = async () => {
     
     // Basitleştirilmiş yaklaşım: Sadece bir ziyaretçi kaydı ekle
     // Toplam sayıyı almak için COUNT(*) kullanılabilir
-    const { error } = await supabase
+    // Bugünün tarihini YYYY-MM-DD formatında al
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Önce bugün için kayıt var mı kontrol et
+    const { data: existingVisit } = await supabase
       .from('visitors')
-      .insert([{ 
-        visited_at: new Date().toISOString() 
-      }]);
+      .select('*')
+      .eq('date', today)
+      .single();
+      
+    let error = null;
+    
+    if (existingVisit) {
+      // Eğer bugün için kayıt varsa, sayıyı artır
+      const { error: updateError } = await supabase
+        .from('visitors')
+        .update({ count: existingVisit.count + 1 })
+        .eq('date', today);
+      error = updateError;
+    } else {
+      // Eğer bugün için kayıt yoksa, yeni kayıt oluştur
+      const { error: insertError } = await supabase
+        .from('visitors')
+        .insert([{ 
+          date: today,
+          count: 1
+        }]);
+      error = insertError;
+    }
     
     if (error) {
       console.error('Ziyaretçi kaydı eklenirken hata:', error);
@@ -227,17 +253,32 @@ export const likeQuestion = async (questionId: string) => {
       return true;
     }
     
-    // Beğeni ekle
-    const { data, error } = await supabase
-      .from('likes')
-      .insert([{ question_id: questionId }]);
-    
-    if (error) {
-      console.error('Beğeni eklenirken hata:', error);
+    // Önce soruyu al ve mevcut beğeni sayısını kontrol et
+    const { data: questionData, error: questionError } = await supabase
+      .from('questions')
+      .select('likes_count')
+      .eq('id', questionId)
+      .single();
       
-      // Eğer tablo bulunamadı hatası ise, başarılı kabul et
-      if (error.code === '42P01') { // Tablo bulunamadı hatası
-        console.log('Likes tablosu bulunamadı, simüle edildi.');
+    if (questionError) {
+      console.error('Soru bilgisi alınırken hata:', questionError);
+    }
+    
+    // Mevcut beğeni sayısı (yoksa 0)
+    const currentLikes = questionData?.likes_count || 0;
+    
+    // Beğeni sayısını artır
+    const { data: updateData, error: updateError } = await supabase
+      .from('questions')
+      .update({ likes_count: currentLikes + 1 })
+      .eq('id', questionId);
+      
+    if (updateError) {
+      console.error('Beğeni sayısı güncellenirken hata:', updateError);
+      
+      // Eğer tablo veya sütun bulunamadı hatası ise, yine de başarılı kabul et
+      if (updateError.code === '42P01' || updateError.code === '42703') {
+        console.log('Beğeni sayısı güncellenemedi, simüle edildi.');
         
         // Beğeniyi localStorage'e kaydet
         likedQuestions.push(questionId);
@@ -245,9 +286,19 @@ export const likeQuestion = async (questionId: string) => {
         
         return true;
       }
-      
-      // Diğer hatalar için başarısız kabul et
-      return false;
+    }
+    
+    // Ayrıca likes tablosuna da ekle (varsa)
+    try {
+      const { error: likesError } = await supabase
+        .from('likes')
+        .insert([{ question_id: questionId }]);
+        
+      if (likesError && likesError.code !== '42P01') {
+        console.error('Likes tablosuna eklenirken hata:', likesError);
+      }
+    } catch (likesInsertError) {
+      console.error('Likes tablosuna erişim hatası:', likesInsertError);
     }
     
     // Beğeniyi localStorage'e kaydet
@@ -261,6 +312,18 @@ export const likeQuestion = async (questionId: string) => {
     return true;
   } catch (error) {
     console.error('Beğeni işlemi sırasında hata:', error);
+    
+    // Hata durumunda bile localStorage'e kaydet (kullanıcı deneyimi için)
+    try {
+      const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '[]');
+      if (!likedQuestions.includes(questionId)) {
+        likedQuestions.push(questionId);
+        localStorage.setItem('likedQuestions', JSON.stringify(likedQuestions));
+      }
+    } catch (localStorageError) {
+      console.error('LocalStorage hatası:', localStorageError);
+    }
+    
     return false;
   }
 };

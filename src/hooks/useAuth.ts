@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/services/supabase";
-import { User } from "@supabase/supabase-js";
+import { User, AuthError } from "@supabase/supabase-js";
 
 /**
  * Supabase kimlik doğrulama hook'u
@@ -47,52 +47,52 @@ export const useAuth = () => {
     isLoading,
     signIn: async (email: string, password: string) => {
       try {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        return { error };
+        return { error: error as AuthError };
       } catch (error) {
         console.error("Giriş yapılırken hata:", error);
-        return { error };
+        return { error: error as AuthError };
       }
     },
     signInWithGoogle: async () => {
       try {
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
             redirectTo: `${window.location.origin}/auth/callback`,
           },
         });
-        return { error };
+        return { error: error as AuthError };
       } catch (error) {
         console.error("Google ile giriş yapılırken hata:", error);
-        return { error };
+        return { error: error as AuthError };
       }
     },
     signUp: async (email: string, password: string) => {
       try {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
-        return { error };
+        return { error: error as AuthError };
       } catch (error) {
         console.error("Kayıt olunurken hata:", error);
-        return { error };
+        return { error: error as AuthError };
       }
     },
     signOut: async () => {
       try {
         const { error } = await supabase.auth.signOut();
-        return { error };
+        return { error: error as AuthError };
       } catch (error) {
         console.error("Çıkış yapılırken hata:", error);
-        return { error };
+        return { error: error as AuthError };
       }
     },
   };

@@ -10,26 +10,27 @@ import CopyButton from "../atoms/CopyButton";
 
 interface AnswerDisplayProps {
   question: string;
+  questionId: string;
   answer: string;
   isLoading: boolean;
 }
 
-const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
+const AnswerDisplay = ({ question, questionId, answer, isLoading }: AnswerDisplayProps) => {
   const [liked, setLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
 
   // Sayfa yüklendiğinde daha önce beğenilen soruları kontrol et
   useEffect(() => {
-    if (question) {
+    if (questionId) {
       try {
         const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '[]');
-        setLiked(likedQuestions.includes(question));
+        setLiked(likedQuestions.includes(questionId));
       } catch (error) {
         console.error("Beğenilen sorular kontrol edilirken hata oluştu:", error);
       }
     }
-  }, [question]);
+  }, [questionId]);
 
   // Cevap veya yükleme durumu değiştiğinde gösterimi güncelle
   useEffect(() => {
@@ -39,13 +40,13 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
   }, [answer, isLoading]);
 
   const handleLike = async () => {
-    if (!question || liked || isLiking) return;
+    if (!questionId || liked || isLiking) return;
     
     try {
       setIsLiking(true);
       
       // Soruyu beğen
-      const success = await likeQuestion(question);
+      const success = await likeQuestion(questionId);
       
       if (success) {
         setLiked(true);
@@ -54,8 +55,8 @@ const AnswerDisplay = ({ question, answer, isLoading }: AnswerDisplayProps) => {
         // LocalStorage'e beğeniyi kaydet
         try {
           const likedQuestions = JSON.parse(localStorage.getItem('likedQuestions') || '[]');
-          if (!likedQuestions.includes(question)) {
-            likedQuestions.push(question);
+          if (!likedQuestions.includes(questionId)) {
+            likedQuestions.push(questionId);
             localStorage.setItem('likedQuestions', JSON.stringify(likedQuestions));
           }
         } catch (error) {

@@ -10,14 +10,17 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { saveQuestion, incrementVisitorCount } from "@/services/supabase";
 import { FiHelpCircle, FiMessageSquare } from "react-icons/fi";
+import { Suspense } from "react";
 
-export default function Home() {
+function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
   const { user } = useAuth();
   const [recentQuestions, setRecentQuestions] = useLocalStorage<string[]>("recentQuestions", []);
   const [visitorCounted, setVisitorCounted] = useLocalStorage<boolean>("visitorCounted", false);
+
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
 
   // Sayfa yüklendiğinde ziyaretçi sayısını artır
   useEffect(() => {
@@ -60,7 +63,12 @@ export default function Home() {
       // Soruyu kaydet (üye ise Supabase'e, değilse localStorage'a)
       if (user) {
         try {
-          await saveQuestion(user.id, question, answer);
+          const questionId = await saveQuestion(user.id, question, answer);
+          if (questionId) {
+            setCurrentQuestionId(questionId);
+          } else {
+            console.error("Soru kaydedilirken ID alınamadı.");
+          }
         } catch (error) {
           console.error("Soru kaydedilirken hata oluştu:", error);
           // Hata durumunda kullanıcıyı rahatsız etme, sessizce devam et
@@ -107,7 +115,8 @@ export default function Home() {
 
       {/* Cevap Gösterimi */}
       <AnswerDisplay 
-        question={currentQuestion} 
+        question={currentQuestion}
+        questionId={currentQuestionId || ""}
         answer={currentAnswer} 
         isLoading={isLoading} 
       />
@@ -126,10 +135,6 @@ export default function Home() {
                 Namaz, oruç, zekat gibi ibadetler hakkındaki sorularınızı sorabilir, farklı mezheplerin görüşlerini öğrenebilirsiniz.
               </p>
               <p>
-                Sistemimiz, güvenilir İslami kaynaklardan beslenen yapay zeka modelleri kullanarak sorularınıza kapsamlı yanıtlar üretir. 
-                Cevaplar, farklı görüşleri ve delilleri içerecek şekilde yapılandırılmıştır.
-              </p>
-              <p>
                 <strong>Not:</strong> Caiz.me bir fetva makamı değildir. Önemli dini konularda mutlaka bir din aliminden görüş alınız.
               </p>
             </div>
@@ -137,5 +142,20 @@ export default function Home() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Yükleniyor...</h1>
+          <p className="text-gray-600">Lütfen bekleyin.</p>
+        </div>
+      </div>
+    }>
+      <HomePage />
+    </Suspense>
   );
 }

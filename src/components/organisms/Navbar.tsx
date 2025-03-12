@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { FiHome, FiMail, FiMenu, FiX, FiSun, FiMoon, FiUser, FiLogIn, FiLogOut } from 'react-icons/fi';
-import { useTheme } from '@/providers/ThemeProvider';
+import { useTheme } from '@/hooks/useTheme';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

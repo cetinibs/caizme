@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import VisitorCounter from '@/components/atoms/VisitorCounter';
+import Navbar from '@/components/organisms/Navbar';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -37,10 +38,10 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <QueryProvider>
             <AuthProvider>
-              <VisitorCounter />
+              <Navbar />
               {children}
               <Toaster position="bottom-right" />
             </AuthProvider>
