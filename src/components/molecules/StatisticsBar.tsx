@@ -36,13 +36,8 @@ const StatisticsBar = () => {
         const statistics = await getStatistics();
         console.log('Veritabanından alınan istatistikler:', statistics);
 
-        // Sıfır değerler varsa ve zorla yenileme değilse, tekrar dene
-        if (!forceRefresh && (statistics.totalQuestions === 0 || statistics.totalVisitors === 0)) {
-          console.log('Sıfır değerler algılandı, zorla yenileme yapılıyor...');
-          // Kısa bir bekleme süresi sonra zorla yenileme yap
-          setTimeout(() => fetchStatistics(true), 500);
-          return;
-        }
+        // Verileri ayarla (sıfır olsa bile)
+        // Tekrar deneme işlemini kaldırdık çünkü sonsuz döngüye neden oluyordu
 
         setStats(statistics);
       } catch (error) {
@@ -63,12 +58,7 @@ const StatisticsBar = () => {
               totalLikes: 0,
             });
 
-            // Varsayılan değerler gösteriliyorsa ve zorla yenileme değilse, tekrar dene
-            if (!forceRefresh) {
-              console.log('Varsayılan değerler gösteriliyor, zorla yenileme yapılıyor...');
-              // Kısa bir bekleme süresi sonra zorla yenileme yap
-              setTimeout(() => fetchStatistics(true), 1000);
-            }
+            // Varsayılan değerleri göster - tekrar deneme kaldırıldı
           }
         } catch (e) {
           console.error('Önbellek okuma hatası:', e);
@@ -87,8 +77,8 @@ const StatisticsBar = () => {
     // İlk yükleme - zorla yenileme ile
     fetchStatistics(true);
 
-    // 15 saniyede bir istatistikleri güncelle
-    const intervalId = setInterval(() => fetchStatistics(true), 15000);
+    // 60 saniyede bir istatistikleri güncelle (daha az sıklıkta)
+    const intervalId = setInterval(() => fetchStatistics(true), 60000);
 
     // Temizleme fonksiyonu
     return () => clearInterval(intervalId);

@@ -5,7 +5,6 @@ import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { AuthProvider } from '@/components/providers/AuthProvider';
-import VisitorCounter from '@/components/atoms/VisitorCounter';
 import Navbar from '@/components/organisms/Navbar';
 
 const inter = Inter({ subsets: ['latin'] });
