@@ -38,7 +38,7 @@ function HomePage() {
         // Başarılı olursa, kullanıcıyı sayılmış olarak işaretle
         setVisitorCounted(true);
       } catch (error) {
-        console.error("Ziyaretçi sayısı artırılırken hata oluştu:", error);
+        console.warn("Ziyaretçi sayısı artırılırken hata oluştu (geliştirme modunda normal):", error);
         // Hata durumunda 5 dakika sonra tekrar deneyebilmek için
         setTimeout(() => setVisitorCounted(false), 300000); // 5 dakika
       }
@@ -98,7 +98,7 @@ function HomePage() {
         }
       }
     } catch (error) {
-      console.error("Soru sorulurken hata oluştu:", error);
+      console.warn("Soru sorulurken hata oluştu (geliştirme modunda normal):", error);
       toast.error("Bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       setIsLoading(false);

@@ -325,13 +325,13 @@ export const incrementVisitorCount = async () => {
             }]);
 
           if (insertError) {
-            console.error('Yeni ziyaretçi kaydı oluşturulurken hata:', insertError);
+            console.warn('Yeni ziyaretçi kaydı oluşturulurken hata (geliştirme modunda normal):', insertError.message);
           } else {
             console.log('Yeni ziyaretçi kaydı başarıyla oluşturuldu.');
             updateSuccess = true;
           }
         } else {
-          console.error('Ziyaretçi kaydı kontrolünde hata:', checkError);
+          console.warn('Ziyaretçi kaydı kontrolünde hata (geliştirme modunda normal):', checkError.message);
         }
       } else if (existingVisit) {
         // Eğer bugün için kayıt varsa, sayıyı artır
@@ -342,14 +342,14 @@ export const incrementVisitorCount = async () => {
           .eq('date', today);
 
         if (updateError) {
-          console.error('Ziyaretçi sayısı güncellenirken hata:', updateError);
+          console.warn('Ziyaretçi sayısı güncellenirken hata (geliştirme modunda normal):', updateError.message);
         } else {
           console.log('Ziyaretçi sayısı başarıyla güncellendi.');
           updateSuccess = true;
         }
       }
     } catch (dbError) {
-      console.error('Veritabanı işlemi sırasında hata:', dbError);
+      console.warn('Veritabanı işlemi sırasında hata (geliştirme modunda normal):', dbError);
     }
 
     // Başarılı veya başarısız, kullanıcıyı sayılmış olarak işaretle
@@ -373,7 +373,7 @@ export const incrementVisitorCount = async () => {
 
     return updateSuccess;
   } catch (error) {
-    console.error('Ziyaretçi sayısı artırılırken hata:', error);
+    console.warn('Ziyaretçi sayısı artırılırken hata (geliştirme modunda normal):', error);
 
     // Hata durumunda bile kullanıcıyı sayılmış olarak işaretle
     localStorage.setItem('visitorCounted', 'true');
