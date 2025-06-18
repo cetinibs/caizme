@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { FiHome, FiMail, FiMenu, FiX, FiSun, FiMoon, FiUser, FiLogIn, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { FiHome, FiMail, FiMenu, FiX, FiSun, FiMoon, FiUser, FiLogIn, FiLogOut, FiSettings } from 'react-icons/fi';
 import { useTheme } from '@/hooks/useTheme';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  // Component mount olduğunda işaretle (hydration sonrası)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Scroll durumunu izle
   useEffect(() => {
@@ -80,9 +86,9 @@ const Navbar = () => {
             <button
               onClick={toggleTheme}
               className="ml-2 p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              aria-label={theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'}
+              aria-label={!mounted ? 'Tema değiştir' : theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'}
             >
-              {theme === 'dark' ? (
+              {!mounted ? null : theme === 'dark' ? (
                 <FiSun className="h-5 w-5" />
               ) : (
                 <FiMoon className="h-5 w-5" />
@@ -98,6 +104,13 @@ const Navbar = () => {
                 >
                   <FiUser className="mr-2" />
                   Profil
+                </Link>
+                <Link
+                  href="/admin/predefined-answers"
+                  className="flex items-center px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <FiSettings className="mr-2" />
+                  Hazır Cevaplar
                 </Link>
                 <button
                   onClick={() => signOut()}
@@ -124,9 +137,9 @@ const Navbar = () => {
             <button
               onClick={toggleTheme}
               className="p-2 mr-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              aria-label={theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'}
+              aria-label={!mounted ? 'Tema değiştir' : theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'}
             >
-              {theme === 'dark' ? (
+              {!mounted ? null : theme === 'dark' ? (
                 <FiSun className="h-5 w-5" />
               ) : (
                 <FiMoon className="h-5 w-5" />
@@ -179,6 +192,13 @@ const Navbar = () => {
               >
                 <FiUser className="mr-2" />
                 Profil
+              </Link>
+              <Link
+                href="/admin/predefined-answers"
+                className="flex items-center px-4 py-3 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <FiSettings className="mr-2" />
+                Hazır Cevaplar
               </Link>
               <button
                 onClick={() => signOut()}

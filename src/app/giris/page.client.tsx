@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { FaGoogle } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';

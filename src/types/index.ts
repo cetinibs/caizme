@@ -22,4 +22,5 @@ export interface ContactForm {
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
+  source?: 'ai' | 'predefined' | 'fallback';
 }

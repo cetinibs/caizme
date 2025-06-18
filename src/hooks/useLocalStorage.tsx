@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   // State to store our value
@@ -38,21 +38,21 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
   // Return a wrapped version of useState's setter function that
   // persists the new value to localStorage.
-  const setValue = (value: T | ((val: T) => T)) => {
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
       // Allow value to be a function so we have same API as useState
-      const valueToStore =
-        value instanceof Function ? value(storedValue) : value;
-      
-      // Save state
-      setStoredValue(valueToStore);
+      if (value instanceof Function) {
+        setStoredValue(value);
+      } else {
+        setStoredValue(value);
+      }
       
       // localStorage güncellemesi useEffect içinde otomatik olarak yapılacak
     } catch (error) {
       // A more advanced implementation would handle the error case
       console.error('Error setting state:', error);
     }
-  };
+  }, []); // Artık hiçbir dependency'ye ihtiyaç yok
 
   return [storedValue, setValue] as const;
 }

@@ -88,23 +88,27 @@ async function getAIResponse(question: string): Promise<string> {
 
     // Server-side API endpoint'i kullan
     try {
+      console.log('OpenRouter API isteği başlatılıyor...');
       const response = await axios.post('/api/openrouter', {
         question: enhancedQuestion
       });
 
       // API yanıtını detaylı logla
-      console.log('API yanıtı alındı');
+      console.log('API yanıtı alındı:', response.status);
+      console.log('API yanıt içeriği:', response.data ? 'Veri mevcut' : 'Veri yok');
 
       // API'den dönen cevabı işle
       if (response.data && response.data.answer) {
+        console.log('Cevap formatlanıyor...');
         // Cevabı formatla ve iyileştir
         return formatAnswer(response.data.answer);
       }
 
-      console.error('API yanıtı beklenen formatta değil:', response.data);
+      console.error('API yanıtı beklenen formatta değil:', JSON.stringify(response.data).substring(0, 200));
       return 'Üzgünüm, bu soruya cevap veremiyorum.';
-    } catch (apiError) {
+    } catch (apiError: any) {
       console.error('Server API hatası:', apiError);
+      console.error('Hata detayları:', apiError.response ? JSON.stringify(apiError.response.data).substring(0, 200) : 'Yanıt detayları yok');
       // Hata durumunda yedek cevap üret
       return generateFallbackResponse(question);
     }

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   creator: 'Caiz.me',
   publisher: 'Caiz.me',
   verification: {
-    google: 'wMJgbeJzlF5_t5K5s5t8RzmqGt4oRXHMjgNwXa3QX8A',
+    google: 'SpQecqIGJrVKBXz8ReyclCE6c0uwg5pjULz9NcGjBAE',
   },
   openGraph: {
     title: 'Caiz.me - İslami Sorularınızın Cevabı',

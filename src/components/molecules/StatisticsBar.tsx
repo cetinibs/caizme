@@ -20,61 +20,90 @@ const StatisticsBar = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStatistics = async () => {
+    const fetchStatistics = async (forceRefresh = false) => {
       try {
         setIsLoading(true);
-        
-        // Önce localStorage'den istatistikleri kontrol et
-        const cachedStatsStr = localStorage.getItem('cachedStats');
-        const cachedTime = localStorage.getItem('cachedStatsTime');
-        
-        // Eğer önbelleğe alınmış istatistikler varsa ve 1 saatten daha yeni ise kullan
-        if (cachedStatsStr && cachedTime) {
-          const cachedStats = JSON.parse(cachedStatsStr);
-          const cacheAge = Date.now() - parseInt(cachedTime);
-          
-          // Önbellek 1 saatten daha yeni ise kullan (3600000 ms = 1 saat)
-          if (cacheAge < 3600000) {
-            setStats(cachedStats);
-            setIsLoading(false);
-            return;
-          }
+        console.log('İstatistikler yükleniyor... (Zorla yenileme:', forceRefresh, ')');
+
+        // Önbelleği temizle (zorla yenileme durumunda)
+        if (forceRefresh) {
+          localStorage.removeItem('cachedStats');
+          localStorage.removeItem('cachedStatsTime');
+          console.log('Önbellek temizlendi, güncel veriler alınacak');
         }
-        
-        // Önbellekte yoksa veya eskiyse, Supabase'den al
+
+        // Veritabanından güncel istatistikleri al
         const statistics = await getStatistics();
+        console.log('Veritabanından alınan istatistikler:', statistics);
+
+        // Sıfır değerler varsa ve zorla yenileme değilse, tekrar dene
+        if (!forceRefresh && (statistics.totalQuestions === 0 || statistics.totalVisitors === 0)) {
+          console.log('Sıfır değerler algılandı, zorla yenileme yapılıyor...');
+          // Kısa bir bekleme süresi sonra zorla yenileme yap
+          setTimeout(() => fetchStatistics(true), 500);
+          return;
+        }
+
         setStats(statistics);
-        
-        // Yeni istatistikleri önbelleğe al
-        localStorage.setItem('cachedStats', JSON.stringify(statistics));
-        localStorage.setItem('cachedStatsTime', Date.now().toString());
       } catch (error) {
         console.error("İstatistikler yüklenirken hata oluştu:", error);
-        
-        // Hata durumunda varsayılan değerleri göster
-        setStats({
-          totalQuestions: 0,
-          totalVisitors: 0,
-          totalLikes: 0,
-        });
+
+        // Hata durumunda önbellekteki verileri kontrol et
+        try {
+          const cachedStatsStr = localStorage.getItem('cachedStats');
+          if (cachedStatsStr) {
+            const cachedStats = JSON.parse(cachedStatsStr);
+            console.log('Hata durumunda önbellekten istatistikler kullanılıyor:', cachedStats);
+            setStats(cachedStats);
+          } else {
+            // Önbellekte de yoksa varsayılan değerleri göster
+            setStats({
+              totalQuestions: 0,
+              totalVisitors: 0,
+              totalLikes: 0,
+            });
+
+            // Varsayılan değerler gösteriliyorsa ve zorla yenileme değilse, tekrar dene
+            if (!forceRefresh) {
+              console.log('Varsayılan değerler gösteriliyor, zorla yenileme yapılıyor...');
+              // Kısa bir bekleme süresi sonra zorla yenileme yap
+              setTimeout(() => fetchStatistics(true), 1000);
+            }
+          }
+        } catch (e) {
+          console.error('Önbellek okuma hatası:', e);
+          // Varsayılan değerleri göster
+          setStats({
+            totalQuestions: 0,
+            totalVisitors: 0,
+            totalLikes: 0,
+          });
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchStatistics();
+    // İlk yükleme - zorla yenileme ile
+    fetchStatistics(true);
+
+    // 15 saniyede bir istatistikleri güncelle
+    const intervalId = setInterval(() => fetchStatistics(true), 15000);
+
+    // Temizleme fonksiyonu
+    return () => clearInterval(intervalId);
   }, []);
 
   // İstatistik kartı bileşeni
-  const StatCard = ({ 
-    icon, 
-    title, 
-    value, 
-    delay 
-  }: { 
-    icon: React.ReactNode; 
-    title: string; 
-    value: number; 
+  const StatCard = ({
+    icon,
+    title,
+    value,
+    delay
+  }: {
+    icon: React.ReactNode;
+    title: string;
+    value: number;
     delay: number;
   }) => (
     <motion.div

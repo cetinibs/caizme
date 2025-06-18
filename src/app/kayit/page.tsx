@@ -3,16 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
-import { FiMail } from 'react-icons/fi';
-import { FiLock } from 'react-icons/fi';
-import { FiAlertCircle } from 'react-icons/fi';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { FaGoogle } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { Suspense } from 'react';
 
-// RegisterContent bileşeni - client-side işlevselliği içerir
-function RegisterContent() {
+export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -208,26 +204,5 @@ function RegisterContent() {
         </p>
       </div>
     </div>
-  );
-}
-
-// Fallback bileşeni - yükleme durumunu gösterir
-function LoadingFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Yükleniyor...</h1>
-        <p className="text-gray-600">Lütfen bekleyin.</p>
-      </div>
-    </div>
-  );
-}
-
-// Ana sayfa bileşeni - Suspense ile sarılmış
-export default function RegisterPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <RegisterContent />
-    </Suspense>
   );
 }
